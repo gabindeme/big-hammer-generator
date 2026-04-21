@@ -58,8 +58,23 @@ let currentType = 'hammer';   // 'hammer' | 'big-hammer'
 let isSpinning = false;
 let history = JSON.parse(localStorage.getItem('bh_history') || '[]');
 let currentSandwich = null;
+let excludedIngredients = JSON.parse(localStorage.getItem('bh_excluded') || '[]');
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+function getAvailableIngredients(categoryList) {
+  const available = categoryList.filter(item => !excludedIngredients.includes(item.name));
+  return available.length > 0 ? available : categoryList; // always return at least something
+}
+
+function toggleExclusion(name, isExcluded) {
+  if (isExcluded) {
+    if (!excludedIngredients.includes(name)) excludedIngredients.push(name);
+  } else {
+    excludedIngredients = excludedIngredients.filter(n => n !== name);
+  }
+  localStorage.setItem('bh_excluded', JSON.stringify(excludedIngredients));
+}
 
 /** Pick a random item from an array */
 function pickRandom(arr) {
@@ -86,6 +101,11 @@ function now() {
 const $ = id => document.getElementById(id);
 
 const el = {
+  btnSettingsToggle: $('btnSettingsToggle'),
+  btnCloseSettings: $('btnCloseSettings'),
+  settingsModal: $('settingsModal'),
+  settingsOverlay: $('settingsOverlay'),
+  settingsBody: $('settingsBody'),
   cardHammer: $('cardHammer'),
   cardBigHammer: $('cardBigHammer'),
   btnGenerate: $('btnGenerate'),
@@ -226,11 +246,13 @@ function spinReel(reel, items, target, stopDelay) {
 async function generateCrudites(crudites) {
   const [c1, c2, c3] = crudites;
   const baseDelay = 120;
+  
+  const available = getAvailableIngredients(INGREDIENTS.crudites);
 
   return Promise.all([
-    spinReel(el.reel1, INGREDIENTS.crudites, c1, 0),
-    spinReel(el.reel2, INGREDIENTS.crudites, c2, baseDelay * 2),
-    spinReel(el.reel3, INGREDIENTS.crudites, c3, baseDelay * 4),
+    spinReel(el.reel1, available, c1, 0),
+    spinReel(el.reel2, available, c2, baseDelay * 2),
+    spinReel(el.reel3, available, c3, baseDelay * 4),
   ]);
 }
 
@@ -246,12 +268,22 @@ async function generateSandwich() {
   // Hide empty state
   el.emptyState.classList.add('hidden');
 
+  // Fetch available ingredients based on settings
+  const availViandes = getAvailableIngredients(INGREDIENTS.viandes);
+  const availFromages = getAvailableIngredients(INGREDIENTS.fromages);
+  const availCrudites = getAvailableIngredients(INGREDIENTS.crudites);
+  const availSauces = getAvailableIngredients(INGREDIENTS.sauces);
+
   // Build sandwich
   const isBig = currentType === 'big-hammer';
-  const viandes = isBig ? pickN(INGREDIENTS.viandes, 2) : [pickRandom(INGREDIENTS.viandes)];
-  const fromage = pickRandom(INGREDIENTS.fromages);
-  const crudites = pickUniqueN(INGREDIENTS.crudites, 3);
-  const sauce = pickRandom(INGREDIENTS.sauces);
+  const viandes = isBig ? pickN(availViandes, 2) : [pickRandom(availViandes)];
+  const fromage = pickRandom(availFromages);
+  
+  let cruditesItems = pickUniqueN(availCrudites, Math.min(3, availCrudites.length));
+  while (cruditesItems.length < 3) cruditesItems.push(pickRandom(availCrudites));
+  const crudites = cruditesItems;
+
+  const sauce = pickRandom(availSauces);
 
   currentSandwich = { type: currentType, viandes, fromage, crudites, sauce, time: now() };
 
@@ -296,7 +328,11 @@ async function rerollCrudites() {
   el.btnRerollCrudites.disabled = true;
   el.btnGenerate.disabled = true;
 
-  const crudites = pickUniqueN(INGREDIENTS.crudites, 3);
+  const availCrudites = getAvailableIngredients(INGREDIENTS.crudites);
+  let cruditesItems = pickUniqueN(availCrudites, Math.min(3, availCrudites.length));
+  while (cruditesItems.length < 3) cruditesItems.push(pickRandom(availCrudites));
+  
+  const crudites = cruditesItems;
   currentSandwich.crudites = crudites;
 
   await generateCrudites(crudites);
@@ -468,6 +504,67 @@ el.btnShare.addEventListener('click', async () => {
     showToast('❌ Impossible de copier');
   }
 });
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+
+function renderSettings() {
+  el.settingsBody.innerHTML = '<p class="settings-desc">Décoche les ingrédients que tu ne souhaites pas voir apparaître au tirage.</p>';
+
+  const categories = [
+    { key: 'viandes', icon: '🥩', label: 'Viandes' },
+    { key: 'fromages', icon: '🧀', label: 'Fromages' },
+    { key: 'crudites', icon: '🥗', label: 'Crudités' },
+    { key: 'sauces', icon: '🫙', label: 'Sauces' }
+  ];
+
+  categories.forEach(cat => {
+    const group = document.createElement('div');
+    group.className = 'settings-group';
+    group.innerHTML = `<div class="settings-group-title"><span class="group-icon">${cat.icon}</span> ${cat.label}</div>`;
+    
+    INGREDIENTS[cat.key].forEach(item => {
+      const isChecked = !excludedIngredients.includes(item.name);
+      
+      const itemEl = document.createElement('div');
+      itemEl.className = 'settings-item';
+      itemEl.innerHTML = `
+        <div class="settings-item-label">
+          <span class="settings-item-emoji">${item.emoji}</span>
+          <span>${item.name}</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" value="${item.name}" ${isChecked ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+      `;
+      group.appendChild(itemEl);
+      
+      const input = itemEl.querySelector('input');
+      input.addEventListener('change', (e) => {
+        toggleExclusion(e.target.value, !e.target.checked);
+      });
+    });
+    
+    el.settingsBody.appendChild(group);
+  });
+}
+
+function openSettings() {
+  renderSettings();
+  el.settingsModal.classList.add('open');
+  el.settingsOverlay.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSettings() {
+  el.settingsModal.classList.remove('open');
+  el.settingsOverlay.classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+el.btnSettingsToggle.addEventListener('click', openSettings);
+el.btnCloseSettings.addEventListener('click', closeSettings);
+el.settingsOverlay.addEventListener('click', closeSettings);
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 

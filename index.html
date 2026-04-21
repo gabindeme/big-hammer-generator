@@ -22,9 +22,14 @@
       <span class="logo-text">Big Hammer</span>
       <span class="logo-badge">Generator</span>
     </div>
-    <button class="btn-history-toggle" id="btnHistoryToggle" title="Historique">
-      📋 <span class="history-count" id="historyCount">0</span>
-    </button>
+    <div class="header-actions">
+      <button class="btn-settings-toggle" id="btnSettingsToggle" title="Paramètres des ingrédients">
+        ⚙️
+      </button>
+      <button class="btn-history-toggle" id="btnHistoryToggle" title="Historique">
+        📋 <span class="history-count" id="historyCount">0</span>
+      </button>
+    </div>
   </header>
 
   <!-- Main content -->
@@ -170,6 +175,18 @@
     <button class="btn-clear-history" id="btnClearHistory">🗑️ Vider l'historique</button>
   </aside>
   <div class="history-overlay" id="historyOverlay"></div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsOverlay"></div>
+  <div class="modal-container" id="settingsModal">
+    <div class="modal-header">
+      <h2>⚙️ Ingrédients</h2>
+      <button class="btn-close-modal" id="btnCloseSettings">✕</button>
+    </div>
+    <div class="modal-body" id="settingsBody">
+      <!-- Injected via JS -->
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

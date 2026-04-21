@@ -7,6 +7,7 @@ You can try it live here: [Big Hammer Generator](https://big-hammer-generator.ve
 ## ✨ Features
 
 - **Two Sandwich sizes**: Choose between standard **Hammer** (1 meat) and **Big Hammer** (2 meats).
+- **Ingredient Filtering**: Use the settings panel (⚙️) to exclude ingredients you don't like (e.g., pork, carrots) before generating your sandwich.
 - **Random Generation**: Automatically picks your meat(s), 1 cheese, 3 raw veggies (crudités), and 1 sauce from a predefined tasty list.
 - **Slot Machine Animations**: Enjoy a fun little slot machine spin animation when rolling your veggies.
 - **Reroll**: Don't like your veggies? You can individually reroll the crudités for a better combo!
@@ -38,8 +39,9 @@ Since this is a vanilla frontend project with no build process, setting it up lo
 ## 💡 How it works
 
 1. **Pick your type**: Select "Hammer" or "Big Hammer".
-2. **Generate**: Click the big `🎲` button to spin the wheels.
-3. **Save & Share**: Check the history (`📋` toggle) to name it, or hit the `📤` Share button to copy the recipe text to your clipboard.
+2. **Filter your ingredients**: Click the settings gear icon (`⚙️`) to exclude any ingredient you don't want in your pull.
+3. **Generate**: Click the big `🎲` button to spin the wheels.
+4. **Save & Share**: Check the history (`📋` toggle) to name it, or hit the `📤` Share button to copy the recipe text to your clipboard.
 
 ## 🤝 Contributing
 
