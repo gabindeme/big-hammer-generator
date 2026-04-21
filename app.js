@@ -54,7 +54,7 @@ const INGREDIENTS = {
 
 // ── State ────────────────────────────────────────────────────────────────────
 
-let currentType = 'hamer';   // 'hamer' | 'big-hamer'
+let currentType = 'hammer';   // 'hammer' | 'big-hammer'
 let isSpinning = false;
 let history = JSON.parse(localStorage.getItem('bh_history') || '[]');
 let currentSandwich = null;
@@ -86,8 +86,8 @@ function now() {
 const $ = id => document.getElementById(id);
 
 const el = {
-  cardHamer: $('cardHamer'),
-  cardBigHamer: $('cardBigHamer'),
+  cardHammer: $('cardHammer'),
+  cardBigHammer: $('cardBigHammer'),
   btnGenerate: $('btnGenerate'),
   btnRerollCrudites: $('btnRerollCrudites'),
   btnShare: $('btnShare'),
@@ -137,17 +137,17 @@ function initParticles() {
 
 function selectType(type) {
   currentType = type;
-  el.cardHamer.classList.toggle('active', type === 'hamer');
-  el.cardBigHamer.classList.toggle('active', type === 'big-hamer');
+  el.cardHammer.classList.toggle('active', type === 'hammer');
+  el.cardBigHammer.classList.toggle('active', type === 'big-hammer');
   // Show/hide second viande chip
-  el.viande2.classList.toggle('hidden', type === 'hamer');
-  el.resultTypeBadge.textContent = type === 'hamer' ? '🍔 Hamer' : '🔥 Big Hamer';
+  el.viande2.classList.toggle('hidden', type === 'hammer');
+  el.resultTypeBadge.textContent = type === 'hammer' ? '🍔 Hammer' : '🔥 Big Hammer';
   // Reset result if already showing
   if (currentSandwich) generateSandwich();
 }
 
-el.cardHamer.addEventListener('click', () => selectType('hamer'));
-el.cardBigHamer.addEventListener('click', () => selectType('big-hamer'));
+el.cardHammer.addEventListener('click', () => selectType('hammer'));
+el.cardBigHammer.addEventListener('click', () => selectType('big-hammer'));
 
 // ── Chip animation ────────────────────────────────────────────────────────────
 
@@ -247,7 +247,7 @@ async function generateSandwich() {
   el.emptyState.classList.add('hidden');
 
   // Build sandwich
-  const isBig = currentType === 'big-hamer';
+  const isBig = currentType === 'big-hammer';
   const viandes = isBig ? pickN(INGREDIENTS.viandes, 2) : [pickRandom(INGREDIENTS.viandes)];
   const fromage = pickRandom(INGREDIENTS.fromages);
   const crudites = pickUniqueN(INGREDIENTS.crudites, 3);
@@ -257,7 +257,7 @@ async function generateSandwich() {
 
   // Show type badge
   el.resultTypeBadge.style.display = 'inline-flex';
-  el.resultTypeBadge.textContent = isBig ? '🔥 Big Hamer' : '🍔 Hamer';
+  el.resultTypeBadge.textContent = isBig ? '🔥 Big Hammer' : '🍔 Hammer';
 
   // Animate viandes
   el.viande1.classList.remove('hidden');
@@ -333,7 +333,7 @@ function renderHistory() {
     return;
   }
   el.historyList.innerHTML = history.map((s, i) => {
-    const typeLabel = s.type === 'big-hamer' ? '🔥 Big Hamer' : '🍔 Hamer';
+    const typeLabel = s.type === 'big-hammer' ? '🔥 Big Hammer' : '🍔 Hammer';
     const viandesStr = s.viandes.map(v => `${v.emoji} ${v.name}`).join(', ');
     const cruditesStr = s.crudites.map(c => `${c.emoji} ${c.name}`).join(', ');
     const titleVal = s.title ? escapeHtml(s.title) : '';
@@ -426,7 +426,7 @@ el.btnClearHistory.addEventListener('click', () => {
 const SITE_URL = 'https://big-hammer-generator.vercel.app/';
 
 function formatSandwichText(s) {
-  const typeLabel = s.type === 'big-hamer' ? '🔥 Big Hamer' : '🍔 Hamer';
+  const typeLabel = s.type === 'big-hammer' ? '🔥 Big Hammer' : '🍔 Hammer';
   const viandesStr = s.viandes.map(v => `${v.emoji} ${v.name}`).join(' + ');
   const cruditesStr = s.crudites.map(c => `${c.emoji} ${c.name}`).join(', ');
   const titleLine = s.title ? `✏️ "${s.title}"\n` : '';
@@ -436,7 +436,7 @@ function formatSandwichText(s) {
     `🧀 ${s.fromage.emoji} ${s.fromage.name}`,
     `🥗 ${cruditesStr}`,
     `🫙 ${s.sauce.emoji} ${s.sauce.name}`,
-    `\n➡️ Génère le tien sur Big Hamer Generator !`,
+    `\n➡️ Génère le tien sur Big Hammer Generator !`,
     SITE_URL,
   ].join('\n');
 }
@@ -456,7 +456,7 @@ el.btnShare.addEventListener('click', async () => {
 
   if (navigator.share) {
     try {
-      await navigator.share({ title: 'Mon sandwich Big Hamer 🍔', text });
+      await navigator.share({ title: 'Mon sandwich Big Hammer 🍔', text });
       return;
     } catch (_) { /* fall through to clipboard */ }
   }
@@ -475,7 +475,7 @@ function init() {
   initParticles();
   renderHistory();
   updateHistoryCount();
-  // Make sure 2nd viande is hidden initially (hamer mode)
+  // Make sure 2nd viande is hidden initially (hammer mode)
   el.viande2.classList.add('hidden');
 }
 
