@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="description" content="Génère ton sandwich Hamer ou Big Hamer aléatoire avec animations slot machine !" />
+  <meta name="theme-color" content="#1a0a2e" />
+  <title>Big Hamer Generator 🍔</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Background particles -->
+  <div class="bg-particles" id="bgParticles"></div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo-wrap">
+      <span class="logo-icon">🍔</span>
+      <span class="logo-text">Big Hamer</span>
+      <span class="logo-badge">Generator</span>
+    </div>
+    <button class="btn-history-toggle" id="btnHistoryToggle" title="Historique">
+      📋 <span class="history-count" id="historyCount">0</span>
+    </button>
+  </header>
+
+  <!-- Main content -->
+  <main class="main-content">
+
+    <!-- Type selector -->
+    <section class="type-selector" id="typeSelector">
+      <p class="type-label">Choisis ton sandwich</p>
+      <div class="type-cards">
+        <button class="type-card active" id="cardHamer" data-type="hamer">
+          <span class="type-card-icon">🍔</span>
+          <span class="type-card-name">Hamer</span>
+          <span class="type-card-desc">1 viande · 1 fromage<br>3 crudités · 1 sauce</span>
+        </button>
+        <button class="type-card" id="cardBigHamer" data-type="big-hamer">
+          <span class="type-card-icon">🔥</span>
+          <span class="type-card-name">Big Hamer</span>
+          <span class="type-card-desc">2 viandes · 1 fromage<br>3 crudités · 1 sauce</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Result card -->
+    <section class="result-section" id="resultSection">
+      <div class="result-card" id="resultCard">
+        <div class="result-header">
+          <span class="result-type-badge" id="resultTypeBadge">Hamer</span>
+          <span class="result-emoji">🥪</span>
+        </div>
+
+        <!-- Viandes -->
+        <div class="ingredient-group" id="groupViandes">
+          <div class="group-label">
+            <span class="group-icon">🥩</span>
+            <span>Viandes</span>
+          </div>
+          <div class="ingredient-slots" id="slotsViandes">
+            <div class="ingredient-chip fade-slot" id="viande1">
+              <span class="chip-emoji"></span>
+              <span class="chip-name">—</span>
+            </div>
+            <div class="ingredient-chip fade-slot hidden" id="viande2">
+              <span class="chip-emoji"></span>
+              <span class="chip-name">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fromage -->
+        <div class="ingredient-group" id="groupFromage">
+          <div class="group-label">
+            <span class="group-icon">🧀</span>
+            <span>Fromage</span>
+          </div>
+          <div class="ingredient-slots">
+            <div class="ingredient-chip fade-slot" id="fromage1">
+              <span class="chip-emoji"></span>
+              <span class="chip-name">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Crudités - SLOT MACHINE -->
+        <div class="ingredient-group" id="groupCrudites">
+          <div class="group-label">
+            <span class="group-icon">🥗</span>
+            <span>Crudités</span>
+            <button class="btn-reroll-small" id="btnRerollCrudites" title="Relancer les crudités">
+              🎲
+            </button>
+          </div>
+          <div class="slot-machine-wrap">
+            <div class="slot-machine" id="slotMachine">
+              <div class="slot-reel-container">
+                <div class="slot-reel" id="reel1">
+                  <div class="slot-item"><span class="slot-emoji"></span><span class="slot-name">—</span></div>
+                </div>
+              </div>
+              <div class="slot-separator">✦</div>
+              <div class="slot-reel-container">
+                <div class="slot-reel" id="reel2">
+                  <div class="slot-item"><span class="slot-emoji"></span><span class="slot-name">—</span></div>
+                </div>
+              </div>
+              <div class="slot-separator">✦</div>
+              <div class="slot-reel-container">
+                <div class="slot-reel" id="reel3">
+                  <div class="slot-item"><span class="slot-emoji"></span><span class="slot-name">—</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sauce -->
+        <div class="ingredient-group" id="groupSauce">
+          <div class="group-label">
+            <span class="group-icon">🫙</span>
+            <span>Sauce</span>
+          </div>
+          <div class="ingredient-slots">
+            <div class="ingredient-chip fade-slot" id="sauce1">
+              <span class="chip-emoji"></span>
+              <span class="chip-name">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🎰</div>
+          <p>Appuie sur le bouton pour<br>générer ton sandwich !</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Action buttons -->
+    <section class="actions-section">
+      <button class="btn-generate" id="btnGenerate">
+        <span class="btn-icon">🎲</span>
+        <span class="btn-text">Générer mon sandwich</span>
+        <div class="btn-shine"></div>
+      </button>
+      <button class="btn-share" id="btnShare">
+        <span>📤</span> Partager
+      </button>
+    </section>
+
+    <!-- Share toast -->
+    <div class="toast" id="shareToast">✅ Sandwich copié dans le presse-papier !</div>
+
+  </main>
+
+  <!-- History panel -->
+  <aside class="history-panel" id="historyPanel">
+    <div class="history-header">
+      <h2>📋 Historique</h2>
+      <button class="btn-close-history" id="btnCloseHistory">✕</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty">Aucun sandwich généré</div>
+    </div>
+    <button class="btn-clear-history" id="btnClearHistory">🗑️ Vider l'historique</button>
+  </aside>
+  <div class="history-overlay" id="historyOverlay"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

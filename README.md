@@ -1,2 +1,2 @@
 # big-hamer-generator
-Big Harmer configuration gendrator
+Big Harmer configuration generator
