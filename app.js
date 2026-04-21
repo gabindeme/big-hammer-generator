@@ -129,7 +129,110 @@ const el = {
   reel2: $('reel2'),
   reel3: $('reel3'),
   resultCard: $('resultCard'),
+  shareCard: $('shareCard'),
+  scBadge: $('scBadge'),
+  scViandes: $('scViandes'),
+  scFromage: $('scFromage'),
+  scCrudites: $('scCrudites'),
+  scSauce: $('scSauce'),
 };
+
+// ── Audio Engine ─────────────────────────────────────────────────────────────────
+
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+/** Short slot machine tick */
+function playTick() {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(600 + Math.random() * 200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.04);
+  } catch(_) {}
+}
+
+/** Victory ding jingle (3 ascending notes) */
+function playDing() {
+  try {
+    const ctx = getAudioCtx();
+    const notes = [523, 659, 784]; // C5, E5, G5
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      const t = ctx.currentTime + i * 0.12;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.0, t);
+      gain.gain.linearRampToValueAtTime(0.18, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.30);
+      osc.start(t);
+      osc.stop(t + 0.30);
+    });
+  } catch(_) {}
+}
+
+/** Big Hammer BOOM */
+function playBoom() {
+  try {
+    const ctx = getAudioCtx();
+    // Low impact thud
+    const bufferSize = ctx.sampleRate * 0.25;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.05));
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(120, ctx.currentTime);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(1.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    source.start(ctx.currentTime);
+
+    // Short punch accent
+    const osc = ctx.createOscillator();
+    const ogain = ctx.createGain();
+    osc.connect(ogain); ogain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(90, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.18);
+    ogain.gain.setValueAtTime(0.5, ctx.currentTime);
+    ogain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.18);
+  } catch(_) {}
+}
+
+/** Continuous tick loop while reels are spinning */
+let tickInterval = null;
+function startTickLoop() {
+  stopTickLoop();
+  tickInterval = setInterval(playTick, 80);
+}
+function stopTickLoop() {
+  if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+}
 
 // ── Background particles ──────────────────────────────────────────────────────
 
@@ -264,6 +367,10 @@ async function generateSandwich() {
   el.btnGenerate.disabled = true;
   el.btnGenerate.classList.add('spinning');
   el.btnRerollCrudites.disabled = true;
+  el.btnShare.disabled = true;
+
+  // Start slot tick sounds
+  startTickLoop();
 
   // Hide empty state
   el.emptyState.classList.add('hidden');
@@ -312,6 +419,12 @@ async function generateSandwich() {
 
   await Promise.all([viandeProm, fromageProm, crudProm, sauceProm]);
 
+  // Stop tick sounds and play victory
+  stopTickLoop();
+  const isBigFinal = currentType === 'big-hammer';
+  if (isBigFinal) { playBoom(); setTimeout(playDing, 200); }
+  else { playDing(); }
+
   // Add to history
   addToHistory(currentSandwich);
 
@@ -320,6 +433,7 @@ async function generateSandwich() {
   el.btnGenerate.disabled = false;
   el.btnGenerate.classList.remove('spinning');
   el.btnRerollCrudites.disabled = false;
+  el.btnShare.disabled = false;
 }
 
 async function rerollCrudites() {
@@ -327,6 +441,9 @@ async function rerollCrudites() {
   isSpinning = true;
   el.btnRerollCrudites.disabled = true;
   el.btnGenerate.disabled = true;
+  if (el.btnCard) el.btnCard.disabled = true;
+
+  startTickLoop();
 
   const availCrudites = getAvailableIngredients(INGREDIENTS.crudites);
   let cruditesItems = pickUniqueN(availCrudites, Math.min(3, availCrudites.length));
@@ -337,9 +454,13 @@ async function rerollCrudites() {
 
   await generateCrudites(crudites);
 
+  stopTickLoop();
+  playDing();
+
   isSpinning = false;
   el.btnRerollCrudites.disabled = false;
   el.btnGenerate.disabled = false;
+  el.btnShare.disabled = false;
 }
 
 el.btnGenerate.addEventListener('click', generateSandwich);
@@ -457,25 +578,9 @@ el.btnClearHistory.addEventListener('click', () => {
   updateHistoryCount();
 });
 
-// ── Share ─────────────────────────────────────────────────────────────────────
+// ── Share (Image + Text) ─────────────────────────────────────────────────────
 
 const SITE_URL = 'https://big-hammer-generator.vercel.app/';
-
-function formatSandwichText(s) {
-  const typeLabel = s.type === 'big-hammer' ? '🔥 Big Hammer' : '🍔 Hammer';
-  const viandesStr = s.viandes.map(v => `${v.emoji} ${v.name}`).join(' + ');
-  const cruditesStr = s.crudites.map(c => `${c.emoji} ${c.name}`).join(', ');
-  const titleLine = s.title ? `✏️ "${s.title}"\n` : '';
-  return [
-    `${titleLine}${typeLabel}`,
-    `🥩 ${viandesStr}`,
-    `🧀 ${s.fromage.emoji} ${s.fromage.name}`,
-    `🥗 ${cruditesStr}`,
-    `🫙 ${s.sauce.emoji} ${s.sauce.name}`,
-    `\n➡️ Génère le tien sur Big Hammer Generator !`,
-    SITE_URL,
-  ].join('\n');
-}
 
 function showToast(message, duration = 2500) {
   el.shareToast.textContent = message;
@@ -485,27 +590,58 @@ function showToast(message, duration = 2500) {
 
 el.btnShare.addEventListener('click', async () => {
   if (!currentSandwich) {
-    showToast('⚠️ Génère d\'abord un sandwich !');
+    showToast('⚠️ Gènère d\'abord un sandwich !');
     return;
   }
-  const text = formatSandwichText(currentSandwich);
-
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: 'Mon sandwich Big Hammer 🍔', text });
-      return;
-    } catch (_) { /* fall through to clipboard */ }
+  if (typeof html2canvas === 'undefined') {
+    showToast('❌ html2canvas non chargé');
+    return;
   }
+
+  el.btnShare.disabled = true;
+  el.btnShare.innerHTML = '<span>⏳</span> Partage...';
+
+  populateShareCard(currentSandwich);
+  await new Promise(r => setTimeout(r, 80));
+
+  const shareText = `🍔 Génère ton sandwich sur Big Hammer Generator !
+➡️ ${SITE_URL}`;
 
   try {
-    await navigator.clipboard.writeText(text);
-    showToast('✅ Sandwich copié dans le presse-papier !');
-  } catch (_) {
-    showToast('❌ Impossible de copier');
+    const canvas = await html2canvas(el.shareCard.querySelector('.sc-bg'), {
+      scale: 2, useCORS: true, backgroundColor: null, logging: false,
+    });
+    const filename = `big-hammer-${Date.now()}.png`;
+
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], filename, { type: 'image/png' });
+      // Native share with image + text (mobile)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Mon sandwich Big Hammer 🍔',
+            text: shareText,
+          });
+          return;
+        } catch (_) { /* cancelled or unsupported, fall through */ }
+      }
+      // Desktop: download image + copy text to clipboard
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      try { await navigator.clipboard.writeText(shareText); } catch(_) {}
+      showToast('📸 Carte téléchargée + texte copié !');
+    });
+  } catch (err) {
+    showToast('❌ Erreur lors de la génération de la carte');
+    console.error(err);
+  } finally {
+    el.btnShare.disabled = false;
+    el.btnShare.innerHTML = '<span>📤</span> Partager';
   }
 });
-
-// ── Settings ──────────────────────────────────────────────────────────────────
 
 function renderSettings() {
   el.settingsBody.innerHTML = '<p class="settings-desc">Décoche les ingrédients que tu ne souhaites pas voir apparaître au tirage.</p>';
@@ -565,6 +701,34 @@ function closeSettings() {
 el.btnSettingsToggle.addEventListener('click', openSettings);
 el.btnCloseSettings.addEventListener('click', closeSettings);
 el.settingsOverlay.addEventListener('click', closeSettings);
+
+// ── Share Card (Image) ───────────────────────────────────────────────────────────────
+
+function buildScRow(icon, label, value) {
+  return `
+    <span class="sc-row-icon">${icon}</span>
+    <div class="sc-row-text">
+      <span class="sc-row-label">${label}</span>
+      <span class="sc-row-value">${value}</span>
+    </div>
+  `;
+}
+
+function populateShareCard(s) {
+  const isBig = s.type === 'big-hammer';
+  el.scBadge.textContent = isBig ? '🔥 Big Hammer' : '🍔 Hammer';
+  el.scBadge.classList.toggle('big', isBig);
+
+  const viandesStr = s.viandes.map(v => `${v.emoji} ${v.name}`).join('  +  ');
+  const cruditesStr = s.crudites.map(c => `${c.emoji} ${c.name}`).join('   ');
+
+  el.scViandes.innerHTML = buildScRow('🥩', isBig ? 'Viandes' : 'Viande', viandesStr);
+  el.scFromage.innerHTML = buildScRow('🧀', 'Fromage', `${s.fromage.emoji} ${s.fromage.name}`);
+  el.scCrudites.innerHTML = buildScRow('🥗', 'Crudités', cruditesStr);
+  el.scSauce.innerHTML = buildScRow('🫙', 'Sauce', `${s.sauce.emoji} ${s.sauce.name}`);
+}
+
+
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
